@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.env
+cairo/leaderboard/target/
+*.lock
+.DS_Store
