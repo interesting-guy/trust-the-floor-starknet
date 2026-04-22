@@ -68,7 +68,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       switch(n){
       case 1: return {
         tip:['tip: green = good,  red = bad','(probably)'],
-        flag:{x:855,y:415}, playerStart:{x:40,y:400},
+        flag:{x:855,y:450}, playerStart:{x:40,y:400},
         platforms:[
           // Continuous floor – player walks UNDER the green death block (it's high enough)
           {id:'g1', x:0,  y:450,w:400,h:20,type:'ground'},
@@ -86,7 +86,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       };
       case 2: return {
         tip:['tip: watch your step',''],
-        flag:{x:855,y:415}, playerStart:{x:30,y:400},
+        flag:{x:855,y:450}, playerStart:{x:30,y:400},
         platforms:[
           {id:'g1', x:0,  y:450,w:100,h:20,type:'ground'},
           {id:'pt1',x:100,y:450,w:120,h:20,type:'passthrough'},
@@ -103,7 +103,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       };
       case 3: return {
         tip:['tip: platforms are your friends',''],
-        flag:{x:855,y:285}, playerStart:{x:30,y:400},
+        flag:{x:855,y:300}, playerStart:{x:30,y:400},
         platforms:[
           {id:'g1',x:0,  y:450,w:160,h:20,type:'ground'},
           {id:'g2',x:120,y:380,w:80, h:16,type:'ground'},
@@ -117,7 +117,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       };
       case 4: return {
         tip:['tip: the floor looks safe here!',''],
-        flag:{x:855,y:415}, playerStart:{x:30,y:400},
+        flag:{x:855,y:450}, playerStart:{x:30,y:400},
         platforms:[
           {id:'s0', x:0,  y:450,w:120,h:20,type:'safe'},
           {id:'st1',x:120,y:450,w:120,h:20,type:'spikeTrap'},
@@ -126,15 +126,15 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
           {id:'s1', x:240,y:450,w:120,h:20,type:'safe'},
           {id:'s2', x:480,y:450,w:120,h:20,type:'safe'},
           {id:'s3', x:720,y:450,w:180,h:20,type:'safe'},
-          {id:'s4', x:150,y:360,w:80, h:16,type:'safe'},
-          {id:'s5', x:380,y:360,w:80, h:16,type:'safe'},
-          {id:'s6', x:610,y:360,w:80, h:16,type:'safe'},
+          {id:'s4', x:150,y:360,w:80, h:16,type:'death'},
+          {id:'s5', x:380,y:360,w:80, h:16,type:'death'},
+          {id:'s6', x:610,y:360,w:80, h:16,type:'death'},
           {id:'d1', x:300,y:340,w:60, h:16,type:'death'},
         ],
       };
       case 5: return {
         tip:['tip: checkpoints save your progress!',''],
-        flag:{x:855,y:335}, playerStart:{x:30,y:400},
+        flag:{x:855,y:350}, playerStart:{x:30,y:400},
         platforms:[
           {id:'g1',x:0,  y:450,w:200,h:20,type:'ground'},
           {id:'d1',x:140,y:370,w:100,h:16,type:'death'},
@@ -152,7 +152,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       };
       case 6: return {
         tip:['tip: use arrow keys to move',''],
-        flag:{x:855,y:415}, playerStart:{x:30,y:400},
+        flag:{x:855,y:450}, playerStart:{x:30,y:400},
         swapControls:true,
         platforms:[
           {id:'g1',x:0,  y:450,w:130,h:20,type:'ground'},
@@ -185,25 +185,30 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
         // Tip arrow points at a death trap. Don't jump — just walk across the red spikes.
         // No gaps. Jumping = green death block. Walking on spikes = safe.
         tip:['jump HERE  \u2192  (trust the arrow!)',''],
-        flag:{x:20,y:390}, playerStart:{x:840,y:400},
+        flag:{x:20,y:450}, playerStart:{x:840,y:400},
         platforms:[
           // Continuous floor: ground → red spikes → ground → red spikes → ground
           {id:'g1',x:660,y:450,w:240,h:20,type:'ground'},
-          {id:'s1',x:490,y:456,w:170,h:14,type:'safe'},   // flush with floor visually
+          {id:'s1',x:490,y:450,w:170,h:20,type:'safe'},
           {id:'g2',x:300,y:450,w:190,h:20,type:'ground'},
-          {id:'s2',x:130,y:456,w:170,h:14,type:'safe'},
+          {id:'s2',x:130,y:450,w:170,h:20,type:'safe'},
           {id:'g3',x:0,  y:450,w:130,h:20,type:'ground'},
           // Green death blocks hovering at jump height directly above the spike sections
-          // If player jumps on the spikes they fly into green = instant death
           {id:'d1',x:490,y:290,w:170,h:18,type:'death'},
           {id:'d2',x:130,y:290,w:170,h:18,type:'death'},
           // Extra green decoy near the flag for last-second panic
           {id:'d3',x:30, y:330,w:90, h:16,type:'death'},
+          // Decorative: high-up green blocks (unreachable — visual decoys)
+          {id:'dec1',x:350,y:170,w:80,h:16,type:'death'},
+          {id:'dec2',x:180,y:200,w:60,h:16,type:'death'},
+          // Decorative: low red platforms (safe to step on, visual variety)
+          {id:'dec3',x:590,y:390,w:80,h:14,type:'safe'},
+          {id:'dec4',x:250,y:395,w:70,h:14,type:'safe'},
         ],
       };
       case 9: return {
         tip:['tip: watch out for falling objects',''],
-        flag:{x:855,y:335}, playerStart:{x:30,y:400},
+        flag:{x:800,y:300}, playerStart:{x:30,y:400},
         spawnApples:true,
         platforms:[
           {id:'g1',x:0,  y:450,w:200,h:20,type:'ground'},
@@ -211,11 +216,11 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
           {id:'g3',x:500,y:450,w:400,h:20,type:'ground'},
           {id:'s1',x:200,y:390,w:60, h:16,type:'safe'},
           {id:'s2',x:440,y:390,w:60, h:16,type:'safe'},
-          {id:'s3',x:550,y:350,w:120,h:16,type:'safe'},
+          {id:'s3',x:550,y:350,w:75, h:16,type:'safe'},
           {id:'s4',x:700,y:300,w:130,h:16,type:'safe'},
           {id:'d1',x:300,y:360,w:100,h:16,type:'death'},
-          {id:'d2',x:630,y:360,w:80, h:16,type:'death'},
-          {id:'g4',x:680,y:370,w:220,h:16,type:'ground'},
+          {id:'d2',x:635,y:360,w:70, h:16,type:'death'},
+          {id:'g4',x:712,y:370,w:188,h:16,type:'ground'},
         ],
       };
       case 10: return {
@@ -231,7 +236,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
           {id:'v1', x:220,y:370,w:80, h:16,type:'vanish'},
           {id:'st1',x:300,y:450,w:100,h:20,type:'spikeTrap'},
           {id:'s1', x:320,y:385,w:80, h:16,type:'safe'},
-          {id:'ck', x:415,y:360,w:30, h:30,type:'checkpoint'},
+          {id:'ck', x:390,y:355,w:30, h:30,type:'checkpoint'},
           {id:'g3', x:400,y:450,w:100,h:20,type:'ground'},
           {id:'d1', x:430,y:370,w:80, h:16,type:'death'},
           {id:'s2', x:500,y:450,w:60, h:20,type:'safe'},
@@ -307,12 +312,39 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
     }
 
     function drawSafe(p: any){
-      ctx.fillStyle='#660000'; ctx.fillRect(p.x,p.y+8,p.w,p.h);
+      ctx.fillStyle='#660000'; ctx.fillRect(p.x,p.y,p.w,p.h);
       ctx.fillStyle='#cc0000';
       const sw=14;
       for(let i=p.x;i<p.x+p.w;i+=sw){
-        ctx.beginPath(); ctx.moveTo(i,p.y+8); ctx.lineTo(i+sw/2,p.y-6);
-        ctx.lineTo(Math.min(i+sw,p.x+p.w),p.y+8); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(i,p.y); ctx.lineTo(i+sw/2,p.y-6);
+        ctx.lineTo(Math.min(i+sw,p.x+p.w),p.y); ctx.closePath(); ctx.fill();
+      }
+    }
+
+    function drawGroundFlipped(p: any){
+      ctx.fillStyle='#3a3a5c'; ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle='#555580'; ctx.fillRect(p.x,p.y+p.h-3,p.w,3);
+    }
+
+    function drawDeathFlipped(p: any){
+      const g=ctx.createLinearGradient(p.x,p.y,p.x,p.y+p.h);
+      g.addColorStop(0,'#33cc33'); g.addColorStop(1,'#66ff66');
+      ctx.fillStyle=g; ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle='#88ff88';
+      for(let i=p.x+8;i<p.x+p.w-4;i+=12){
+        ctx.beginPath(); ctx.moveTo(i,p.y+p.h); ctx.lineTo(i-3,p.y+p.h+5); ctx.lineTo(i+3,p.y+p.h+5);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.strokeStyle='#44ff44'; ctx.lineWidth=1; ctx.strokeRect(p.x,p.y,p.w,p.h);
+    }
+
+    function drawSafeFlipped(p: any){
+      ctx.fillStyle='#660000'; ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle='#cc0000';
+      const sw=14;
+      for(let i=p.x;i<p.x+p.w;i+=sw){
+        ctx.beginPath(); ctx.moveTo(i,p.y+p.h); ctx.lineTo(i+sw/2,p.y+p.h+6);
+        ctx.lineTo(Math.min(i+sw,p.x+p.w),p.y+p.h); ctx.closePath(); ctx.fill();
       }
     }
 
@@ -391,21 +423,36 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
 
     function drawPlatform(p: any){
       if(p.disabled) return;
+      const flipped=!!(levelData.gravityFlipX && p.x>=levelData.gravityFlipX);
       switch(p.type){
-        case 'ground':      drawGround(p);      break;
-        case 'death':       drawDeath(p);       break;
-        case 'safe':        drawSafe(p);        break;
-        case 'ghost':                           break;
-        case 'passthrough': drawPassthrough(p); break;
-        case 'vanish':      drawVanish(p);      break;
-        case 'cracked':     drawCracked(p);     break;
-        case 'spikeTrap':   drawSpikeTrap(p);   break;
-        case 'checkpoint':  drawCheckpoint(p);  break;
+        case 'ground':      flipped?drawGroundFlipped(p):drawGround(p);   break;
+        case 'death':       flipped?drawDeathFlipped(p):drawDeath(p);     break;
+        case 'safe':        flipped?drawSafeFlipped(p):drawSafe(p);       break;
+        case 'ghost':                                                       break;
+        case 'passthrough': drawPassthrough(p);                            break;
+        case 'vanish':      drawVanish(p);                                 break;
+        case 'cracked':     drawCracked(p);                                break;
+        case 'spikeTrap':   drawSpikeTrap(p);                              break;
+        case 'checkpoint':  drawCheckpoint(p);                             break;
       }
+    }
+
+    function drawFlagInverted(f: any){
+      if(!f) return;
+      // Hangs from ceiling (gc platforms at y:0-20 in flipped zones)
+      const ceilY=20;
+      ctx.strokeStyle='#aaa'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(f.x,ceilY); ctx.lineTo(f.x,ceilY+60); ctx.stroke();
+      ctx.fillStyle='#ffdd00';
+      ctx.beginPath(); ctx.moveTo(f.x,ceilY+60); ctx.lineTo(f.x+30,ceilY+50); ctx.lineTo(f.x,ceilY+40);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#222'; ctx.font='bold 9px monospace';
+      ctx.fillText('END',f.x+4,ceilY+57);
     }
 
     function drawFlag(f: any){
       if(!f) return;
+      if(levelData.gravityFlipX && f.x>=levelData.gravityFlipX){ drawFlagInverted(f); return; }
       ctx.strokeStyle='#aaa'; ctx.lineWidth=3;
       ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(f.x,f.y-60); ctx.stroke();
       ctx.fillStyle='#ffdd00';
