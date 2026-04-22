@@ -52,10 +52,13 @@ export class StarkZap {
       throw new Error('@cartridge/controller not installed. Run: npm install @cartridge/controller')
     }
 
-    // Build session policies (call-policy shape expected by v0.13)
+    // Normalize addresses to full 66-char hex so Cartridge policy lookup matches exactly
+    const norm = (addr: string) => '0x' + addr.toLowerCase().replace(/^0x/, '').padStart(64, '0')
+
+    // Build session policies (call-policy shape expected by @cartridge/controller v0.13)
     const sessionPolicies = policies.length
       ? { contracts: Object.fromEntries(policies.map(p => [
-          p.target,
+          norm(p.target),
           { methods: [{ name: p.method, entrypoint: p.method }] },
         ]))
         }

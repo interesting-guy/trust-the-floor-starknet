@@ -16,16 +16,23 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
   const [txHash, setTxHash] = useState<string | null>(null)
   const [voyagerUrl, setVoyagerUrl] = useState<string | null>(null)
   const [txError, setTxError] = useState<string | null>(null)
+  const [sessionExpired, setSessionExpired] = useState(false)
 
   async function handleSubmit() {
     if (!wallet.account) return
     setTxError(null)
+    setSessionExpired(false)
     try {
       const { txHash: hash, voyagerUrl: url } = await submit(wallet.account, result.deaths, 10)
       setTxHash(hash)
       setVoyagerUrl(url)
     } catch (e: any) {
-      setTxError(e?.message ?? 'Transaction failed')
+      const msg: string = e?.message ?? 'Transaction failed'
+      if (msg === 'SESSION_EXPIRED') {
+        setSessionExpired(true)
+      } else {
+        setTxError(msg)
+      }
     }
   }
 
@@ -81,7 +88,20 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
                   {submitting ? 'submitting...' : 'submit score'}
                 </button>
 
-                {(txError || submitError) && (
+                {sessionExpired && (
+                  <div className="col gap-6">
+                    <p style={{ fontSize: 11, color: 'var(--red)' }}>
+                      wallet session expired or policy mismatch
+                    </p>
+                    <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>
+                      go to home, disconnect, and reconnect your wallet — then try again
+                    </p>
+                    <button className="btn btn-ghost" onClick={onHome} style={{ fontSize: 11, width: '100%' }}>
+                      go home to reconnect
+                    </button>
+                  </div>
+                )}
+                {(txError || submitError) && !sessionExpired && (
                   <p style={{ fontSize: 11, color: 'var(--red)', wordBreak: 'break-word' }}>
                     {txError || submitError}
                   </p>

@@ -92,13 +92,33 @@ export async function submitScore(
   if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS.startsWith('0x000000')) {
     throw new Error('Contract not deployed. Set VITE_LEADERBOARD_CONTRACT in .env')
   }
-  const contract = new Contract(CONTRACT_ABI as any, CONTRACT_ADDRESS, account)
-  const result = await contract.submit_score(
-    cairo.felt(deaths.toString()),
-    cairo.felt(levelReached.toString())
-  )
-  // result.transaction_hash for v6 starknet.js
-  return (result as any).transaction_hash ?? (result as any).hash ?? ''
+
+  console.log('[submitScore] contract:', CONTRACT_ADDRESS)
+  console.log('[submitScore] args — deaths:', deaths, 'level_reached:', levelReached)
+
+  try {
+    // Use account.execute directly — avoids ABI double-encoding and works
+    // reliably with Cartridge session keys (which validate call against policy).
+    const result = await account.execute([{
+      contractAddress: CONTRACT_ADDRESS,
+      entrypoint: 'submit_score',
+      calldata: [BigInt(deaths).toString(), BigInt(levelReached).toString()],
+    }])
+
+    const hash = (result as any).transaction_hash ?? (result as any).hash ?? ''
+    console.log('[submitScore] tx hash:', hash)
+    return hash
+  } catch (e: any) {
+    const msg: string = e?.message ?? String(e)
+    console.error('[submitScore] error:', msg)
+
+    // Detect stale/expired Cartridge session or policy mismatch
+    if (/session|policy|unauthorized|not allowed|OutsideExecution|assertion|Invalid caller/i.test(msg)) {
+      throw new Error('SESSION_EXPIRED')
+    }
+
+    throw new Error(msg || 'Transaction failed')
+  }
 }
 
 export function voyagerTxUrl(txHash: string): string {
