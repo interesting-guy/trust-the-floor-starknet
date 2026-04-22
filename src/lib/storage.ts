@@ -1,9 +1,15 @@
 const USERNAME_MAP_KEY = 'ttf_usernames' // { [address]: username }
 
+export function normalizeAddress(address: string): string {
+  // Pad to 66 chars (0x + 64 hex digits), lowercase
+  const hex = address.toLowerCase().replace(/^0x/, '')
+  return '0x' + hex.padStart(64, '0')
+}
+
 export function getUsername(address: string): string | null {
   try {
     const map = JSON.parse(localStorage.getItem(USERNAME_MAP_KEY) || '{}')
-    return map[address.toLowerCase()] ?? null
+    return map[normalizeAddress(address)] ?? null
   } catch {
     return null
   }
@@ -12,7 +18,7 @@ export function getUsername(address: string): string | null {
 export function setUsername(address: string, name: string): void {
   try {
     const map = JSON.parse(localStorage.getItem(USERNAME_MAP_KEY) || '{}')
-    map[address.toLowerCase()] = name
+    map[normalizeAddress(address)] = name
     localStorage.setItem(USERNAME_MAP_KEY, JSON.stringify(map))
   } catch {}
 }

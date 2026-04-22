@@ -1,4 +1,5 @@
 import { RpcProvider, Contract, CallData, cairo } from 'starknet'
+import { normalizeAddress } from './storage'
 import type { LeaderboardEntry } from '../types'
 
 // ── Cairo contract stub (deploy separately) ──────────────────────────────────
@@ -65,13 +66,16 @@ export async function fetchLeaderboard(
     const raw = await contract.get_leaderboard()
     // raw is an array of [address, deaths, level_reached] tuples
     return (raw as any[])
-      .map((entry: any) => ({
-        rank: 0,
-        address: `0x${BigInt(entry[0]).toString(16)}`,
-        name: nameResolver(`0x${BigInt(entry[0]).toString(16)}`) ?? `0x${BigInt(entry[0]).toString(16).slice(0, 6)}...`,
-        deaths: Number(entry[1]),
-        level: Number(entry[2]),
-      }))
+      .map((entry: any) => {
+        const addr = normalizeAddress(`0x${BigInt(entry[0]).toString(16)}`)
+        return {
+          rank: 0,
+          address: addr,
+          name: nameResolver(addr) ?? `0x${addr.slice(2, 8)}...`,
+          deaths: Number(entry[1]),
+          level: Number(entry[2]),
+        }
+      })
       .filter(e => e.level >= 10)           // only all-10-levels completers
       .sort((a, b) => a.deaths - b.deaths)  // fewest deaths = best rank
       .map((e, i) => ({ ...e, rank: i + 1 }))

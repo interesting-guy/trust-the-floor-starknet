@@ -32,7 +32,8 @@ export function useLeaderboard(): UseLeaderboardReturn {
     setSubmitError(null)
     try {
       const txHash = await submitScore(account, deaths, level)
-      await load() // refresh leaderboard after submit
+      await new Promise(r => setTimeout(r, 4000)) // wait for tx to be indexed
+      await load()
       return { txHash, voyagerUrl: voyagerTxUrl(txHash) }
     } catch (e: any) {
       const msg = e?.message ?? 'Transaction failed'
