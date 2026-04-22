@@ -76,7 +76,7 @@ export class StarkZap {
 
   // ── Browser wallet (Argent X / Braavos) ────────────────────────────────
   async connectBrowser(): Promise<WalletConnection> {
-    // get-starknet-core v4 provides wallet discovery utilities; actual enable
+    // @starknet-io/get-starknet-core provides wallet discovery utilities; actual enable
     // goes through the injected window.starknet* objects.
     const win = window as any
 
