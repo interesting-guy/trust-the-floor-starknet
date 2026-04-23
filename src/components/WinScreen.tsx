@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLeaderboard } from '../hooks/useLeaderboard'
-import { formatTime } from '../lib/storage'
+import { formatTime, getUsername, setUsername } from '../lib/storage'
 import { contractDeployed } from '../lib/starknet'
 import type { WinResult, WalletState } from '../types'
 
@@ -18,10 +18,18 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
   const [txError, setTxError] = useState<string | null>(null)
   const [sessionExpired, setSessionExpired] = useState(false)
 
+  const existingName = wallet.address ? getUsername(wallet.address) : null
+  const [nameInput, setNameInput] = useState(existingName ?? '')
+
   async function handleSubmit() {
-    if (!wallet.account) return
+    if (!wallet.account || !wallet.address) return
     setTxError(null)
     setSessionExpired(false)
+
+    // Save name before submitting so leaderboard has it immediately
+    const trimmed = nameInput.trim()
+    if (trimmed) setUsername(wallet.address, trimmed)
+
     try {
       const { txHash: hash, voyagerUrl: url } = await submit(wallet.account, result.deaths, 10)
       setTxHash(hash)
@@ -73,20 +81,46 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
           <>
             {contractDeployed ? (
               <>
-                <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-                  {wallet.connected
-                    ? 'sign one transaction to put your score on-chain'
-                    : 'connect a wallet on the home screen to submit scores'}
-                </p>
+                {wallet.connected ? (
+                  <>
+                    <div className="col gap-6">
+                      <label style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
+                        your name
+                      </label>
+                      <input
+                        type="text"
+                        value={nameInput}
+                        onChange={e => setNameInput(e.target.value)}
+                        placeholder="enter a name for the leaderboard"
+                        maxLength={20}
+                        style={{
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text)',
+                          fontFamily: 'Courier New, monospace',
+                          fontSize: 13,
+                          padding: '8px 12px',
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
 
-                <button
-                  className="btn btn-primary"
-                  onClick={handleSubmit}
-                  disabled={!wallet.connected || !wallet.account || submitting}
-                  style={{ width: '100%' }}
-                >
-                  {submitting ? 'submitting...' : 'submit score'}
-                </button>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleSubmit}
+                      disabled={!wallet.account || submitting}
+                      style={{ width: '100%' }}
+                    >
+                      {submitting ? 'submitting...' : 'submit score'}
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
+                    connect a wallet on the home screen to submit scores
+                  </p>
+                )}
 
                 {(txError || submitError || sessionExpired) && (
                   <div className="col gap-6">
@@ -109,9 +143,6 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
                   <span className="dot dot-yellow" />
                   <span style={{ fontSize: 12, color: 'var(--muted)' }}>on-chain leaderboard coming soon</span>
                 </div>
-                <p style={{ fontSize: 11, color: 'var(--dim)', lineHeight: 1.6 }}>
-                  deploy the Cairo contract and set <code style={{ color: 'var(--muted)' }}>VITE_LEADERBOARD_CONTRACT</code> in <code style={{ color: 'var(--muted)' }}>.env</code> to enable score submission.
-                </p>
               </div>
             )}
           </>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UsernameModal } from './UsernameModal'
 import { useLeaderboard } from '../hooks/useLeaderboard'
-import { getUsername, setUsername, shortAddress } from '../lib/storage'
+import { getUsername, setUsername, shortAddress, normalizeAddress } from '../lib/storage'
 import type { WalletState } from '../types'
 
 interface Props {
@@ -88,16 +88,24 @@ export function HomeScreen({ wallet, onPlay }: Props) {
               </tr>
             </thead>
             <tbody>
-              {entries.map(e => (
-                <tr key={e.rank}>
-                  <td className={`rank-${e.rank}`} style={{ width: 32, fontWeight: 'bold' }}>
-                    {e.rank}
-                  </td>
-                  <td style={{ color: 'var(--text)' }}>{e.name}</td>
-                  <td>{e.deaths}</td>
-                  <td>{e.level}/10</td>
-                </tr>
-              ))}
+              {entries.map(e => {
+                // If this entry belongs to the connected wallet, always show their stored name
+                const isMe = wallet.address &&
+                  normalizeAddress(e.address) === normalizeAddress(wallet.address)
+                const displayName = isMe
+                  ? (getUsername(wallet.address!) ?? e.name)
+                  : e.name
+                return (
+                  <tr key={e.rank}>
+                    <td className={`rank-${e.rank}`} style={{ width: 32, fontWeight: 'bold' }}>
+                      {e.rank}
+                    </td>
+                    <td style={{ color: isMe ? 'var(--accent)' : 'var(--text)' }}>{displayName}</td>
+                    <td>{e.deaths}</td>
+                    <td>{e.level}/10</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
