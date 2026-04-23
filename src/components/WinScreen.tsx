@@ -31,7 +31,7 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
     if (trimmed) setUsername(wallet.address, trimmed)
 
     try {
-      const { txHash: hash, voyagerUrl: url } = await submit(wallet.account, result.deaths, 10)
+      const { txHash: hash, voyagerUrl: url } = await submit(wallet.account, result.deaths, 10, trimmed)
       setTxHash(hash)
       setVoyagerUrl(url)
     } catch (e: any) {

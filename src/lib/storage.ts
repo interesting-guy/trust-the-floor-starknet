@@ -10,9 +10,7 @@ export function getUsername(address: string): string | null {
   try {
     const map = JSON.parse(localStorage.getItem(USERNAME_MAP_KEY) || '{}')
     const key = normalizeAddress(address)
-    const result = map[key] ?? null
-    console.log('[getUsername] key:', key, '→', result, '| all keys:', Object.keys(map))
-    return result
+    return map[key] ?? null
   } catch {
     return null
   }

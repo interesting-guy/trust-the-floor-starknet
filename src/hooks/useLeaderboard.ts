@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchLeaderboard, submitScore, voyagerTxUrl } from '../lib/starknet'
-import { getUsername } from '../lib/storage'
 import type { LeaderboardEntry } from '../types'
 
 interface UseLeaderboardReturn {
   entries: LeaderboardEntry[]
   loading: boolean
   refresh: () => void
-  submit: (account: any, deaths: number, level: number) => Promise<{ txHash: string; voyagerUrl: string }>
+  submit: (account: any, deaths: number, level: number, username: string) => Promise<{ txHash: string; voyagerUrl: string }>
   submitting: boolean
   submitError: string | null
 }
@@ -20,18 +19,18 @@ export function useLeaderboard(): UseLeaderboardReturn {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const data = await fetchLeaderboard(addr => getUsername(addr))
+    const data = await fetchLeaderboard()
     setEntries(data)
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const submit = useCallback(async (account: any, deaths: number, level: number) => {
+  const submit = useCallback(async (account: any, deaths: number, level: number, username: string) => {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const txHash = await submitScore(account, deaths, level)
+      const txHash = await submitScore(account, deaths, level, username)
       await new Promise(r => setTimeout(r, 4000)) // wait for tx to be indexed
       await load()
       return { txHash, voyagerUrl: voyagerTxUrl(txHash) }
