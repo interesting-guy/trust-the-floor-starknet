@@ -48,6 +48,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
       entrypoint: 'get_leaderboard',
       calldata: [],
     })
+    console.log('[leaderboard] raw felts:', felts)
     const len = Number(BigInt(felts[0]))
     const entries: LeaderboardEntry[] = []
     for (let i = 0; i < len; i++) {
