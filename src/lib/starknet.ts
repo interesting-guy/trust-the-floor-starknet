@@ -42,26 +42,29 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     return []
   }
   try {
-    const contract = new Contract(CONTRACT_ABI as any, CONTRACT_ADDRESS, provider)
-    const raw = await contract.get_leaderboard()
-    return (raw as any[])
-      .map((entry: any) => {
-        const addr = normalizeAddress(`0x${BigInt(entry[0]).toString(16)}`)
-        let name = `0x${addr.slice(2, 8)}...`
-        try {
-          const usernamefelt = BigInt(entry[3])
-          if (usernamefelt !== 0n) {
-            name = shortString.decodeShortString(`0x${usernamefelt.toString(16)}`)
-          }
-        } catch { /* keep default */ }
-        return {
-          rank: 0,
-          address: addr,
-          name,
-          deaths: Number(entry[1]),
-          level: Number(entry[2]),
+    // Use raw callContract to avoid starknet.js tuple-ABI parsing issues
+    const felts = await provider.callContract({
+      contractAddress: CONTRACT_ADDRESS,
+      entrypoint: 'get_leaderboard',
+      calldata: [],
+    })
+    const len = Number(BigInt(felts[0]))
+    const entries: LeaderboardEntry[] = []
+    for (let i = 0; i < len; i++) {
+      const base = 1 + i * 4
+      const addr = normalizeAddress(`0x${BigInt(felts[base]).toString(16)}`)
+      const deaths = Number(BigInt(felts[base + 1]))
+      const level = Number(BigInt(felts[base + 2]))
+      let name = `0x${addr.slice(2, 8)}...`
+      try {
+        const usernamefelt = BigInt(felts[base + 3])
+        if (usernamefelt !== 0n) {
+          name = shortString.decodeShortString(felts[base + 3])
         }
-      })
+      } catch { /* keep default */ }
+      entries.push({ rank: 0, address: addr, name, deaths, level })
+    }
+    return entries
       .filter(e => e.level >= 10)
       .sort((a, b) => a.deaths - b.deaths)
       .map((e, i) => ({ ...e, rank: i + 1 }))
