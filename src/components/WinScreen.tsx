@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { formatTime, getUsername, setUsername } from '../lib/storage'
 import { contractDeployed } from '../lib/starknet'
@@ -17,6 +17,14 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
   const [voyagerUrl, setVoyagerUrl] = useState<string | null>(null)
   const [txError, setTxError] = useState<string | null>(null)
   const [sessionExpired, setSessionExpired] = useState(false)
+  const [countdown, setCountdown] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (countdown === null) return
+    if (countdown <= 0) { onHome(); return }
+    const t = setTimeout(() => setCountdown(c => (c ?? 1) - 1), 1000)
+    return () => clearTimeout(t)
+  }, [countdown, onHome])
 
   const existingName = wallet.address ? getUsername(wallet.address) : null
   const [nameInput, setNameInput] = useState(existingName ?? '')
@@ -34,6 +42,7 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
       const { txHash: hash, voyagerUrl: url } = await submit(wallet.account, result.deaths, 10, trimmed)
       setTxHash(hash)
       setVoyagerUrl(url)
+      setCountdown(5)
     } catch (e: any) {
       const msg: string = e?.message ?? 'Transaction failed'
       if (msg === 'SESSION_EXPIRED') {
@@ -150,17 +159,19 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
           <div className="col gap-8">
             <div className="row gap-8">
               <span className="dot dot-green" />
-              <span style={{ fontSize: 13, color: 'var(--text)' }}>score submitted</span>
+              <span style={{ fontSize: 13, color: 'var(--text)' }}>score submitted on-chain</span>
             </div>
-            <span style={{ fontSize: 11, color: 'var(--muted)' }}>tx hash</span>
-            <code style={{ fontSize: 11, color: 'var(--muted)', wordBreak: 'break-all' }}>
-              {txHash}
-            </code>
             {voyagerUrl && (
               <a className="tx-link" href={voyagerUrl} target="_blank" rel="noopener noreferrer">
                 view on voyager ↗
               </a>
             )}
+            <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+              going to leaderboard in {countdown}s...
+            </p>
+            <button className="btn btn-primary" onClick={onHome} style={{ width: '100%' }}>
+              view leaderboard now
+            </button>
           </div>
         )}
       </div>
