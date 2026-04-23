@@ -67,17 +67,20 @@ export async function fetchLeaderboard(
     // raw is an array of [address, deaths, level_reached] tuples
     return (raw as any[])
       .map((entry: any) => {
-        const addr = normalizeAddress(`0x${BigInt(entry[0]).toString(16)}`)
+        const rawAddr = `0x${BigInt(entry[0]).toString(16)}`
+        const addr = normalizeAddress(rawAddr)
+        const resolvedName = nameResolver(addr)
+        console.log('[leaderboard] entry raw:', entry[0]?.toString(), '→ addr:', addr, '→ name:', resolvedName)
         return {
           rank: 0,
           address: addr,
-          name: nameResolver(addr) ?? `0x${addr.slice(2, 8)}...`,
+          name: resolvedName ?? `0x${addr.slice(2, 8)}...`,
           deaths: Number(entry[1]),
           level: Number(entry[2]),
         }
       })
-      .filter(e => e.level >= 10)           // only all-10-levels completers
-      .sort((a, b) => a.deaths - b.deaths)  // fewest deaths = best rank
+      .filter(e => e.level >= 10)
+      .sort((a, b) => a.deaths - b.deaths)
       .map((e, i) => ({ ...e, rank: i + 1 }))
   } catch {
     return MOCK_LEADERBOARD
