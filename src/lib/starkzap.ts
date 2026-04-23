@@ -66,7 +66,6 @@ export class StarkZap {
 
     const controller = new Controller({
       rpcUrl: this.rpcUrl,
-      feeSource: 'CREDITS',
       ...(sessionPolicies ? { policies: sessionPolicies } : {}),
     })
 
