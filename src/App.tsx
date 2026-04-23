@@ -15,6 +15,17 @@ export default function App() {
 
   const wallet = useWallet()
 
+  // Cheat key: Ctrl+Shift+W on game screen instantly triggers win (for testing)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (screen === 'game' && e.ctrlKey && e.shiftKey && e.key === 'W') {
+        handleGameWon(0, 12345)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [screen])
+
   // Show username modal whenever a wallet connects without a saved username
   useEffect(() => {
     if (wallet.connected && wallet.address && !getUsername(wallet.address)) {
