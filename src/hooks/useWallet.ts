@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { StarkZap } from '../lib/starkzap'
+import { setUsername } from '../lib/storage'
 import type { WalletState } from '../types'
 
 const CONTRACT = import.meta.env.VITE_LEADERBOARD_CONTRACT || '0x03cbbf5d478f747d480b6cb33c44ccbe1d5741966b141143018caa45dd3b39b7'
@@ -32,6 +33,10 @@ export function useWallet(): UseWalletReturn {
           : [],
       })
       accountRef.current = wallet.account
+      // Auto-save Cartridge username so it shows in the leaderboard
+      if (wallet.username && wallet.address) {
+        setUsername(wallet.address, wallet.username)
+      }
       setState({
         address: wallet.address,
         connected: true,

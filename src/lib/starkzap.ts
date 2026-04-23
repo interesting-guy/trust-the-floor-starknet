@@ -31,6 +31,7 @@ export interface WalletConnection {
   account: any          // starknet.js Account (or compatible)
   provider: RpcProvider
   type: 'cartridge' | 'argent' | 'braavos' | 'unknown'
+  username?: string     // Cartridge username if available
 }
 
 export class StarkZap {
@@ -74,7 +75,13 @@ export class StarkZap {
 
     const address: string = walletAccount.address ?? ''
 
-    return { address, account: walletAccount, provider: this.provider, type: 'cartridge' }
+    let username: string | undefined
+    try {
+      const u = controller.username()
+      username = (u instanceof Promise ? await u : u) ?? undefined
+    } catch { /* username is optional */ }
+
+    return { address, account: walletAccount, provider: this.provider, type: 'cartridge', username }
   }
 
   // ── Browser wallet (Argent X / Braavos) ────────────────────────────────
