@@ -111,16 +111,16 @@ export function HomeScreen({ wallet, onPlay }: Props) {
                 connect wallet
               </span>
               <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-                connect to submit scores to the on-chain leaderboard (sepolia)
+                connect to submit scores to the on-chain leaderboard
               </p>
 
               <button
                 className="btn btn-primary"
-                onClick={handleConnectBrowser}
+                onClick={handleConnectCartridge}
                 disabled={wallet.connecting}
                 style={{ width: '100%' }}
               >
-                {wallet.connecting ? 'connecting...' : 'argent / braavos'}
+                {wallet.connecting ? 'connecting...' : '⚡ cartridge'}
               </button>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -131,11 +131,11 @@ export function HomeScreen({ wallet, onPlay }: Props) {
 
               <button
                 className="btn btn-ghost"
-                onClick={handleConnectCartridge}
+                onClick={handleConnectBrowser}
                 disabled={wallet.connecting}
                 style={{ width: '100%' }}
               >
-                ⚡ cartridge (mainnet only)
+                argent / braavos
               </button>
 
               {wallet.error && (

@@ -13,7 +13,7 @@ import type { LeaderboardEntry } from '../types'
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
-const RPC_URL = import.meta.env.VITE_RPC_URL || 'https://api.cartridge.gg/x/starknet/sepolia'
+const RPC_URL = import.meta.env.VITE_RPC_URL || 'https://api.cartridge.gg/x/starknet/mainnet'
 const CONTRACT_ADDRESS = import.meta.env.VITE_LEADERBOARD_CONTRACT || ''
 
 export const contractDeployed = Boolean(CONTRACT_ADDRESS && !CONTRACT_ADDRESS.startsWith('0x000000'))
@@ -122,7 +122,7 @@ export async function submitScore(
 }
 
 export function voyagerTxUrl(txHash: string): string {
-  return `https://sepolia.voyager.online/tx/${txHash}`
+  return `https://voyager.online/tx/${txHash}`
 }
 
 export { CallData }
