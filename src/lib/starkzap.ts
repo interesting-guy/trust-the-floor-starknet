@@ -64,15 +64,8 @@ export class StarkZap {
         }
       : undefined
 
-    const network = this.rpcUrl.includes('sepolia') ? 'sepolia' : 'mainnet'
-    const chainId = network === 'sepolia'
-      ? '0x534e5f5345504f4c4941'   // SN_SEPOLIA
-      : '0x534e5f4d41494e'          // SN_MAIN
-
     const controller = new Controller({
-      defaultChainId: chainId as any,
       rpcUrl: this.rpcUrl,
-      feeSource: 'CREDITS',
       ...(sessionPolicies ? { policies: sessionPolicies } : {}),
     })
 
