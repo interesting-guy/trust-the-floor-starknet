@@ -75,7 +75,7 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
               <>
                 <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
                   {wallet.connected
-                    ? 'submit your score on-chain to the leaderboard'
+                    ? 'sign one transaction to put your score on-chain'
                     : 'connect a wallet on the home screen to submit scores'}
                 </p>
 
@@ -88,23 +88,19 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
                   {submitting ? 'submitting...' : 'submit score'}
                 </button>
 
-                {sessionExpired && (
+                {(txError || submitError || sessionExpired) && (
                   <div className="col gap-6">
-                    <p style={{ fontSize: 11, color: 'var(--red)' }}>
-                      wallet session expired or policy mismatch
+                    <p style={{ fontSize: 11, color: 'var(--red)', wordBreak: 'break-word' }}>
+                      {sessionExpired
+                        ? 'session expired — go home and reconnect your wallet'
+                        : (txError || submitError)}
                     </p>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.5 }}>
-                      go to home, disconnect, and reconnect your wallet — then try again
-                    </p>
-                    <button className="btn btn-ghost" onClick={onHome} style={{ fontSize: 11, width: '100%' }}>
-                      go home to reconnect
-                    </button>
+                    {sessionExpired && (
+                      <button className="btn btn-ghost" onClick={onHome} style={{ fontSize: 11, width: '100%' }}>
+                        go home to reconnect
+                      </button>
+                    )}
                   </div>
-                )}
-                {(txError || submitError) && !sessionExpired && (
-                  <p style={{ fontSize: 11, color: 'var(--red)', wordBreak: 'break-word' }}>
-                    {txError || submitError}
-                  </p>
                 )}
               </>
             ) : (

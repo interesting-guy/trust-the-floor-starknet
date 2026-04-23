@@ -14,7 +14,7 @@ import type { LeaderboardEntry } from '../types'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const RPC_URL = import.meta.env.VITE_RPC_URL || 'https://api.cartridge.gg/x/starknet/mainnet'
-const CONTRACT_ADDRESS = import.meta.env.VITE_LEADERBOARD_CONTRACT || ''
+const CONTRACT_ADDRESS = import.meta.env.VITE_LEADERBOARD_CONTRACT || '0x03cbbf5d478f747d480b6cb33c44ccbe1d5741966b141143018caa45dd3b39b7'
 
 export const contractDeployed = Boolean(CONTRACT_ADDRESS && !CONTRACT_ADDRESS.startsWith('0x000000'))
 

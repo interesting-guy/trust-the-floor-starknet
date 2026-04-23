@@ -2,9 +2,9 @@ import { useState, useCallback, useRef } from 'react'
 import { StarkZap } from '../lib/starkzap'
 import type { WalletState } from '../types'
 
-const CONTRACT = import.meta.env.VITE_LEADERBOARD_CONTRACT || ''
+const CONTRACT = import.meta.env.VITE_LEADERBOARD_CONTRACT || '0x03cbbf5d478f747d480b6cb33c44ccbe1d5741966b141143018caa45dd3b39b7'
 
-const sdk = new StarkZap({ network: 'sepolia' })
+const sdk = new StarkZap({ network: 'mainnet' })
 
 interface UseWalletReturn extends WalletState {
   account: any | null
