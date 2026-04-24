@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { HomeScreen } from './components/HomeScreen'
 import { WinScreen } from './components/WinScreen'
 import { GameCanvas } from './components/GameCanvas'
@@ -66,6 +67,7 @@ export default function App() {
 
   return (
     <>
+      <Analytics />
       {showUsernameModal && wallet.address && !getUsername(wallet.address) && (
         <UsernameModal onConfirm={handleUsernameConfirm} />
       )}
