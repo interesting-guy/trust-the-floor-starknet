@@ -100,7 +100,10 @@ export function HomeScreen({ wallet, onPlay }: Props) {
                     <td className={`rank-${e.rank}`} style={{ width: 32, fontWeight: 'bold' }}>
                       {e.rank}
                     </td>
-                    <td style={{ color: isMe ? 'var(--accent)' : 'var(--text)' }}>{displayName}</td>
+                    <td style={{ color: isMe ? 'var(--accent)' : 'var(--text)' }}>
+                      {displayName}
+                      {e.verified && <span title="verified on-chain" style={{ marginLeft: 5, fontSize: 10, color: 'var(--muted)' }}>⛓</span>}
+                    </td>
                     <td>{e.deaths}</td>
                     <td>{e.level}/10</td>
                   </tr>

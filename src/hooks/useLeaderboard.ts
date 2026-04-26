@@ -1,12 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchLeaderboard, submitScore, voyagerTxUrl } from '../lib/starknet'
+import { submitScoreToSupabase, fetchLeaderboardFromSupabase } from '../lib/supabase'
+import { submitScore, voyagerTxUrl } from '../lib/starknet'
 import type { LeaderboardEntry } from '../types'
 
 interface UseLeaderboardReturn {
   entries: LeaderboardEntry[]
   loading: boolean
   refresh: () => void
-  submit: (account: any, deaths: number, level: number, username: string) => Promise<{ txHash: string; voyagerUrl: string }>
+  submit: (
+    username: string,
+    deaths: number,
+    level: number,
+    account?: any,
+    address?: string,
+  ) => Promise<{ txHash?: string; voyagerUrl?: string }>
   submitting: boolean
   submitError: string | null
 }
@@ -19,23 +26,46 @@ export function useLeaderboard(): UseLeaderboardReturn {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const data = await fetchLeaderboard()
-    setEntries(data)
-    setLoading(false)
+    try {
+      const data = await fetchLeaderboardFromSupabase()
+      setEntries(data)
+    } catch (e) {
+      console.error('[leaderboard] fetch error:', e)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const submit = useCallback(async (account: any, deaths: number, level: number, username: string) => {
+  const submit = useCallback(async (
+    username: string,
+    deaths: number,
+    level: number,
+    account?: any,
+    address?: string,
+  ) => {
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const txHash = await submitScore(account, deaths, level, username)
-      await new Promise(r => setTimeout(r, 4000)) // wait for tx to be indexed
+      let txHash: string | undefined
+      let txUrl: string | undefined
+
+      // wallet user — submit on-chain first, then to Supabase as verified
+      if (account && address) {
+        txHash = await submitScore(account, deaths, level, username)
+        txUrl = voyagerTxUrl(txHash)
+        await submitScoreToSupabase(username, deaths, level, address, true)
+      } else {
+        // no wallet — Supabase only
+        await submitScoreToSupabase(username, deaths, level, undefined, false)
+      }
+
+      await new Promise(r => setTimeout(r, 2000))
       await load()
-      return { txHash, voyagerUrl: voyagerTxUrl(txHash) }
+      return { txHash, voyagerUrl: txUrl }
     } catch (e: any) {
-      const msg = e?.message ?? 'Transaction failed'
+      const msg = e?.message ?? 'Submission failed'
       setSubmitError(msg)
       throw new Error(msg)
     } finally {

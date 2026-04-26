@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLeaderboard } from '../hooks/useLeaderboard'
 import { formatTime, getUsername, setUsername } from '../lib/storage'
-import { contractDeployed } from '../lib/starknet'
 import type { WinResult, WalletState } from '../types'
 
 interface Props {
@@ -19,6 +18,9 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
   const [sessionExpired, setSessionExpired] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
 
+  const existingName = wallet.address ? getUsername(wallet.address) : null
+  const [nameInput, setNameInput] = useState(existingName ?? '')
+
   useEffect(() => {
     if (countdown === null) return
     if (countdown <= 0) { onHome(); return }
@@ -26,25 +28,28 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
     return () => clearTimeout(t)
   }, [countdown, onHome])
 
-  const existingName = wallet.address ? getUsername(wallet.address) : null
-  const [nameInput, setNameInput] = useState(existingName ?? '')
-
   async function handleSubmit() {
-    if (!wallet.account || !wallet.address) return
     setTxError(null)
     setSessionExpired(false)
 
-    // Save name before submitting so leaderboard has it immediately
     const trimmed = nameInput.trim()
-    if (trimmed) setUsername(wallet.address, trimmed)
+    if (!trimmed) return
+
+    if (wallet.address) setUsername(wallet.address, trimmed)
 
     try {
-      const { txHash: hash, voyagerUrl: url } = await submit(wallet.account, result.deaths, 10, trimmed)
-      setTxHash(hash)
-      setVoyagerUrl(url)
+      const { txHash: hash, voyagerUrl: url } = await submit(
+        trimmed,
+        result.deaths,
+        10,
+        wallet.account ?? undefined,
+        wallet.address ?? undefined,
+      )
+      setTxHash(hash ?? 'submitted')
+      setVoyagerUrl(url ?? null)
       setCountdown(5)
     } catch (e: any) {
-      const msg: string = e?.message ?? 'Transaction failed'
+      const msg: string = e?.message ?? 'Submission failed'
       if (msg === 'SESSION_EXPIRED') {
         setSessionExpired(true)
       } else {
@@ -52,6 +57,8 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
       }
     }
   }
+
+  const submitted = txHash !== null
 
   return (
     <div className="screen" style={{ gap: 32 }}>
@@ -86,72 +93,59 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
 
       {/* submit score */}
       <div className="card col gap-16" style={{ width: '100%', maxWidth: 400 }}>
-        {!txHash ? (
+        {!submitted ? (
           <>
-            {contractDeployed ? (
-              <>
-                {wallet.connected ? (
-                  <>
-                    <div className="col gap-6">
-                      <label style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
-                        your name
-                      </label>
-                      <input
-                        type="text"
-                        value={nameInput}
-                        onChange={e => setNameInput(e.target.value)}
-                        placeholder="enter a name for the leaderboard"
-                        maxLength={20}
-                        style={{
-                          background: 'var(--bg-card)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text)',
-                          fontFamily: 'Courier New, monospace',
-                          fontSize: 13,
-                          padding: '8px 12px',
-                          width: '100%',
-                          boxSizing: 'border-box',
-                          outline: 'none',
-                        }}
-                      />
-                    </div>
+            <div className="col gap-6">
+              <label style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
+                your name
+              </label>
+              <input
+                type="text"
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                placeholder="enter a name for the leaderboard"
+                maxLength={20}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: 13,
+                  padding: '8px 12px',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                }}
+              />
+            </div>
 
-                    <button
-                      className="btn btn-primary"
-                      onClick={handleSubmit}
-                      disabled={!wallet.account || submitting}
-                      style={{ width: '100%' }}
-                    >
-                      {submitting ? 'submitting...' : 'submit score'}
-                    </button>
-                  </>
-                ) : (
-                  <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-                    connect a wallet on the home screen to submit scores
-                  </p>
-                )}
+            <button
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              disabled={submitting || !nameInput.trim()}
+              style={{ width: '100%' }}
+            >
+              {submitting ? 'submitting...' : wallet.connected ? 'submit score on-chain ⛓' : 'submit score'}
+            </button>
 
-                {(txError || submitError || sessionExpired) && (
-                  <div className="col gap-6">
-                    <p style={{ fontSize: 11, color: 'var(--red)', wordBreak: 'break-word' }}>
-                      {sessionExpired
-                        ? 'session expired — go home and reconnect your wallet'
-                        : (txError || submitError)}
-                    </p>
-                    {sessionExpired && (
-                      <button className="btn btn-ghost" onClick={onHome} style={{ fontSize: 11, width: '100%' }}>
-                        go home to reconnect
-                      </button>
-                    )}
-                  </div>
+            {!wallet.connected && (
+              <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>
+                connect a wallet on home screen for an on-chain verified score
+              </p>
+            )}
+
+            {(txError || submitError || sessionExpired) && (
+              <div className="col gap-6">
+                <p style={{ fontSize: 11, color: 'var(--red)', wordBreak: 'break-word' }}>
+                  {sessionExpired
+                    ? 'session expired — go home and reconnect your wallet'
+                    : (txError || submitError)}
+                </p>
+                {sessionExpired && (
+                  <button className="btn btn-ghost" onClick={onHome} style={{ fontSize: 11, width: '100%' }}>
+                    go home to reconnect
+                  </button>
                 )}
-              </>
-            ) : (
-              <div className="col gap-8">
-                <div className="row gap-8">
-                  <span className="dot dot-yellow" />
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>on-chain leaderboard coming soon</span>
-                </div>
               </div>
             )}
           </>
@@ -159,9 +153,11 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
           <div className="col gap-8">
             <div className="row gap-8">
               <span className="dot dot-green" />
-              <span style={{ fontSize: 13, color: 'var(--text)' }}>score submitted on-chain</span>
+              <span style={{ fontSize: 13, color: 'var(--text)' }}>
+                score submitted{wallet.connected ? ' on-chain ⛓' : ''}
+              </span>
             </div>
-            {voyagerUrl && (
+            {voyagerUrl && txHash !== 'submitted' && (
               <a className="tx-link" href={voyagerUrl} target="_blank" rel="noopener noreferrer">
                 view on voyager ↗
               </a>
@@ -177,12 +173,8 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
       </div>
 
       <div className="row gap-12">
-        <button className="btn btn-primary" onClick={onPlayAgain}>
-          play again
-        </button>
-        <button className="btn btn-ghost" onClick={onHome}>
-          home
-        </button>
+        <button className="btn btn-primary" onClick={onPlayAgain}>play again</button>
+        <button className="btn btn-ghost" onClick={onHome}>home</button>
       </div>
     </div>
   )

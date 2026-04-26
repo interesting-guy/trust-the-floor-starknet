@@ -11,6 +11,7 @@
   "dependencies": {
     "@cartridge/controller": "^0.13.12",
     "@starknet-io/get-starknet-core": "^4.0.8",
+    "@supabase/supabase-js": "^2.104.1",
     "@vercel/analytics": "^2.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

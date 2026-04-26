@@ -6,6 +6,7 @@ export interface LeaderboardEntry {
   name: string
   deaths: number
   level: number
+  verified?: boolean
 }
 
 export interface WinResult {
