@@ -8,8 +8,10 @@ interface UseLeaderboardReturn {
   loading: boolean
   refresh: () => void
   submit: (
+    playerId: string,
     username: string,
     deaths: number,
+    timeSeconds: number,
     level: number,
     account?: any,
     address?: string,
@@ -39,8 +41,10 @@ export function useLeaderboard(): UseLeaderboardReturn {
   useEffect(() => { load() }, [load])
 
   const submit = useCallback(async (
+    playerId: string,
     username: string,
     deaths: number,
+    timeSeconds: number,
     level: number,
     account?: any,
     address?: string,
@@ -51,17 +55,16 @@ export function useLeaderboard(): UseLeaderboardReturn {
       let txHash: string | undefined
       let txUrl: string | undefined
 
-      // wallet user — submit on-chain first, then to Supabase as verified
       if (account && address) {
+        // wallet user: submit on-chain first, then Supabase as verified
         txHash = await submitScore(account, deaths, level, username)
         txUrl = voyagerTxUrl(txHash)
-        await submitScoreToSupabase(username, deaths, level, address, true)
+        await submitScoreToSupabase(playerId, username, deaths, timeSeconds, level, true)
       } else {
-        // no wallet — Supabase only
-        await submitScoreToSupabase(username, deaths, level, undefined, false)
+        await submitScoreToSupabase(playerId, username, deaths, timeSeconds, level, false)
       }
 
-      await new Promise(r => setTimeout(r, 2000))
+      await new Promise(r => setTimeout(r, 1500))
       await load()
       return { txHash, voyagerUrl: txUrl }
     } catch (e: any) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLeaderboard } from '../hooks/useLeaderboard'
-import { formatTime, getUsername, setUsername } from '../lib/storage'
+import { getPlayerId, getStoredUsername, storeUsername, formatTimeMM_SS } from '../lib/storage'
 import type { WinResult, WalletState } from '../types'
 
 interface Props {
@@ -18,8 +18,10 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
   const [sessionExpired, setSessionExpired] = useState(false)
   const [countdown, setCountdown] = useState<number | null>(null)
 
-  const existingName = wallet.address ? getUsername(wallet.address) : null
-  const [nameInput, setNameInput] = useState(existingName ?? '')
+  const playerId = getPlayerId(wallet.address)
+  const timeSeconds = Math.floor(result.timeMs / 1000)
+  const existingName = getStoredUsername(playerId) ?? ''
+  const [nameInput, setNameInput] = useState(existingName)
 
   useEffect(() => {
     if (countdown === null) return
@@ -35,13 +37,15 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
     const trimmed = nameInput.trim()
     if (!trimmed) return
 
-    if (wallet.address) setUsername(wallet.address, trimmed)
+    storeUsername(playerId, trimmed)
 
     try {
       const { txHash: hash, voyagerUrl: url } = await submit(
+        playerId,
         trimmed,
         result.deaths,
-        10,
+        timeSeconds,
+        15,
         wallet.account ?? undefined,
         wallet.address ?? undefined,
       )
@@ -83,7 +87,7 @@ export function WinScreen({ result, wallet, onPlayAgain, onHome }: Props) {
         </div>
         <div className="col gap-4" style={{ padding: '20px 32px', alignItems: 'center' }}>
           <span style={{ fontSize: 36, color: 'var(--purple)', fontWeight: 'bold' }}>
-            {formatTime(result.timeMs)}
+            {formatTimeMM_SS(timeSeconds)}
           </span>
           <span style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
             time

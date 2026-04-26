@@ -1,60 +1,23 @@
-import { useState } from 'react'
-import { UsernameModal } from './UsernameModal'
 import { useLeaderboard } from '../hooks/useLeaderboard'
-import { getUsername, setUsername, shortAddress, normalizeAddress } from '../lib/storage'
+import { getPlayerId, getStoredUsername, shortAddress, formatTimeMM_SS } from '../lib/storage'
 import type { WalletState } from '../types'
 
 interface Props {
   wallet: WalletState & { account: any; connectCartridge: () => Promise<void>; connectBrowser: () => Promise<void>; disconnect: () => void }
-  onPlay: () => void
+  onPlay: (level?: number) => void
+  adminMode?: boolean
 }
 
-export function HomeScreen({ wallet, onPlay }: Props) {
+export function HomeScreen({ wallet, onPlay, adminMode }: Props) {
   const { entries, loading } = useLeaderboard()
-  const [showUsernameModal, setShowUsernameModal] = useState(false)
 
-  // Check if connected wallet needs a username
-  const username = wallet.address ? getUsername(wallet.address) : null
+  const myPlayerId = getPlayerId(wallet.address)
+  const myName = getStoredUsername(myPlayerId)
 
-  function handleConnectCartridge() {
-    wallet.connectCartridge().then(() => {
-      // After connecting, check if we need a username
-      if (wallet.address && !getUsername(wallet.address)) {
-        setShowUsernameModal(true)
-      }
-    })
-  }
-
-  function handleConnectBrowser() {
-    wallet.connectBrowser().then(() => {
-      if (wallet.address && !getUsername(wallet.address)) {
-        setShowUsernameModal(true)
-      }
-    })
-  }
-
-  function handleConnectCartridgeWithModal() {
-    wallet.connectCartridge().then(() => {}).catch(() => {})
-    // Show modal after connection resolves via useEffect-like pattern
-    // We handle it differently — see useEffect below
-  }
-
-  function handleUsernameConfirm(name: string) {
-    if (wallet.address) setUsername(wallet.address, name)
-    setShowUsernameModal(false)
-  }
-
-  // Show modal when wallet just connected and has no username
-  const needsUsername = wallet.connected && wallet.address && !getUsername(wallet.address) && showUsernameModal
-
-  const displayName = wallet.address
-    ? (getUsername(wallet.address) ?? shortAddress(wallet.address))
-    : null
+  const displayName = myName ?? (wallet.address ? shortAddress(wallet.address) : null)
 
   return (
     <div className="screen" style={{ gap: 40, minHeight: '100vh', justifyContent: 'flex-start', paddingTop: 60 }}>
-
-      {needsUsername && <UsernameModal onConfirm={handleUsernameConfirm} />}
 
       {/* ── header ─────────────────────────────── */}
       <div className="col gap-4" style={{ alignItems: 'center' }}>
@@ -83,29 +46,27 @@ export function HomeScreen({ wallet, onPlay }: Props) {
               <tr>
                 <th>#</th>
                 <th>name</th>
-                <th>deaths ↑</th>
+                <th>deaths</th>
+                <th>time</th>
                 <th>lvl</th>
               </tr>
             </thead>
             <tbody>
               {entries.map(e => {
-                // If this entry belongs to the connected wallet, always show their stored name
-                const isMe = wallet.address &&
-                  normalizeAddress(e.address) === normalizeAddress(wallet.address)
-                const displayName = isMe
-                  ? (getUsername(wallet.address!) ?? e.name)
-                  : e.name
+                const isMe = e.sessionId === myPlayerId
+                const rowName = isMe ? (myName ?? e.name) : e.name
                 return (
                   <tr key={e.rank}>
                     <td className={`rank-${e.rank}`} style={{ width: 32, fontWeight: 'bold' }}>
                       {e.rank}
                     </td>
                     <td style={{ color: isMe ? 'var(--accent)' : 'var(--text)' }}>
-                      {displayName}
+                      {rowName}
                       {e.verified && <span title="verified on-chain" style={{ marginLeft: 5, fontSize: 10, color: 'var(--muted)' }}>⛓</span>}
                     </td>
                     <td>{e.deaths}</td>
-                    <td>{e.level}/10</td>
+                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{formatTimeMM_SS(e.timeSeconds)}</td>
+                    <td>{e.level}/15</td>
                   </tr>
                 )
               })}
@@ -127,7 +88,7 @@ export function HomeScreen({ wallet, onPlay }: Props) {
 
               <button
                 className="btn btn-primary"
-                onClick={handleConnectCartridge}
+                onClick={() => wallet.connectCartridge()}
                 disabled={wallet.connecting}
                 style={{ width: '100%' }}
               >
@@ -136,7 +97,7 @@ export function HomeScreen({ wallet, onPlay }: Props) {
 
               <button
                 className="btn btn-ghost"
-                onClick={handleConnectBrowser}
+                onClick={() => wallet.connectBrowser()}
                 disabled={wallet.connecting}
                 style={{ width: '100%' }}
               >
@@ -159,9 +120,9 @@ export function HomeScreen({ wallet, onPlay }: Props) {
               </div>
               <div style={{ fontSize: 13, color: 'var(--text)', wordBreak: 'break-all' }}>
                 {displayName}
-                {username && (
+                {myName && wallet.address && (
                   <span style={{ color: 'var(--muted)', fontSize: 11, display: 'block', marginTop: 2 }}>
-                    {shortAddress(wallet.address!)}
+                    {shortAddress(wallet.address)}
                   </span>
                 )}
               </div>
@@ -174,7 +135,7 @@ export function HomeScreen({ wallet, onPlay }: Props) {
           {/* play button */}
           <button
             className="btn btn-primary"
-            onClick={onPlay}
+            onClick={() => onPlay(1)}
             style={{ width: '100%', padding: '14px 22px', fontSize: 15, letterSpacing: 2 }}
           >
             play
@@ -182,15 +143,35 @@ export function HomeScreen({ wallet, onPlay }: Props) {
 
           {!wallet.connected && (
             <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-              play without wallet —<br />scores won't be saved
+              connect wallet for<br />on-chain verified score ⛓
             </p>
           )}
         </div>
       </div>
 
       <p style={{ color: 'var(--dim)', fontSize: 11, letterSpacing: 1 }}>
-        ← → move &nbsp;|&nbsp; space / ↑ jump &nbsp;|&nbsp; 10 levels
+        ← → move &nbsp;|&nbsp; space / ↑ jump &nbsp;|&nbsp; 15 levels
       </p>
+
+      {adminMode && (
+        <div className="card col gap-12" style={{ width: '100%', maxWidth: 860 }}>
+          <span style={{ fontSize: 11, letterSpacing: 3, textTransform: 'uppercase', color: 'var(--muted)' }}>
+            ⚙ level select
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {Array.from({length: 15}, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className="btn btn-ghost"
+                onClick={() => onPlay(n)}
+                style={{ minWidth: 44, fontSize: 12, padding: '6px 10px' }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -63,7 +63,7 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
           name = shortString.decodeShortString(felts[base + 3])
         }
       } catch { /* keep default */ }
-      entries.push({ rank: 0, address: addr, name, deaths, level })
+      entries.push({ rank: 0, sessionId: addr, name, deaths, timeSeconds: 0, level, verified: false })
     }
     return entries
       .filter(e => e.level >= 10)

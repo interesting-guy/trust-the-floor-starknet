@@ -3,9 +3,10 @@ import { useEffect, useRef } from 'react'
 interface Props {
   onGameWon: (deaths: number, timeMs: number) => void
   gameKey: number
+  startLevel?: number
 }
 
-export function GameCanvas({ onGameWon, gameKey }: Props) {
+export function GameCanvas({ onGameWon, gameKey, startLevel = 1 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const onGameWonRef = useRef(onGameWon)
   useEffect(() => { onGameWonRef.current = onGameWon }, [onGameWon])
@@ -63,6 +64,16 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
 
     let wonNotified = false;
     const startTime = Date.now();
+
+    // ── Level 11 toggle state ────────────────────────────────────────────────────
+    let toggleTimer = 0, togglePhase = false;
+    // ── Level 12 countdown + standTile state ────────────────────────────────────
+    let countdownTimer = 0;
+    let standTimers: Record<string,number> = {};
+    // ── Level 14 copycat state ───────────────────────────────────────────────────
+    let copycatHistory: {x:number,y:number}[] = [];
+    let copycatSpikes: {x:number,y:number,timer:number}[] = [];
+    let copycatSpikeSpawn = 0;
 
     function rectOverlap(ax:number,ay:number,aw:number,ah:number,bx:number,by:number,bw:number,bh:number){
       return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
@@ -238,6 +249,76 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
           {id:'sc2',x:820,y:20, w:100,h:16,type:'safe'},
         ],
       };
+      // ── LEVEL 11 — Don't Blink ──────────────────────────────────────────────────
+      case 11: return {
+        tip:['tip: platforms are solid, trust them',''],
+        flag:{x:855,y:450}, playerStart:{x:30,y:400},
+        platforms:[
+          {id:'g1', x:0,  y:450,w:100,h:20,type:'ground'},
+          {id:'t1', x:120,y:410,w:80, h:16,type:'toggle',alt:false}, // group A: safe first
+          {id:'t2', x:250,y:395,w:80, h:16,type:'toggle',alt:true},  // group B: deadly first
+          {id:'t3', x:380,y:385,w:80, h:16,type:'toggle',alt:false}, // group A
+          {id:'t4', x:510,y:395,w:80, h:16,type:'toggle',alt:true},  // group B
+          {id:'t5', x:640,y:410,w:80, h:16,type:'toggle',alt:false}, // group A
+          {id:'g2', x:760,y:450,w:140,h:20,type:'ground'},
+        ],
+      };
+      // ── LEVEL 12 — Speed Run ─────────────────────────────────────────────────────
+      case 12: return {
+        tip:['tip: you have 10 seconds. hurry.',''],
+        flag:{x:855,y:450}, playerStart:{x:30,y:400},
+        platforms:[
+          {id:'g1', x:0,  y:450,w:130,h:20,type:'ground'},
+          {id:'st', x:130,y:450,w:60, h:20,type:'standTile'},
+          {id:'g2', x:190,y:450,w:68, h:20,type:'ground'},
+          {id:'bar',x:258,y:305,w:24, h:145,type:'barrier'},
+          {id:'g3', x:282,y:450,w:140,h:20,type:'ground'},
+          {id:'d1', x:330,y:390,w:70, h:16,type:'death'},
+          {id:'g4', x:422,y:450,w:140,h:20,type:'ground'},
+          {id:'d2', x:490,y:390,w:70, h:16,type:'death'},
+          {id:'g5', x:562,y:450,w:338,h:20,type:'ground'},
+          {id:'s1', x:640,y:390,w:70, h:16,type:'safe'},
+        ],
+      };
+      // ── LEVEL 13 — The Mirror ────────────────────────────────────────────────────
+      case 13: return {
+        tip:['tip: follow the path below',''],
+        flag:{x:855,y:270}, playerStart:{x:30,y:220},
+        platforms:[
+          {id:'g1', x:0,  y:270,w:110,h:200,type:'ground'},
+          {id:'md1',x:120,y:270,w:90, h:16, type:'mirrorDeath'},
+          {id:'ms1',x:220,y:270,w:80, h:16, type:'mirrorSafe'},
+          {id:'md2',x:310,y:270,w:90, h:16, type:'mirrorDeath'},
+          {id:'ms2',x:410,y:270,w:80, h:16, type:'mirrorSafe'},
+          {id:'md3',x:500,y:270,w:90, h:16, type:'mirrorDeath'},
+          {id:'ms3',x:600,y:270,w:80, h:16, type:'mirrorSafe'},
+          {id:'md4',x:690,y:270,w:90, h:16, type:'mirrorDeath'},
+          {id:'g2', x:790,y:270,w:110,h:200,type:'ground'},
+        ],
+      };
+      // ── LEVEL 14 — Copycat ───────────────────────────────────────────────────────
+      case 14: return {
+        tip:['tip: you are not alone',''],
+        flag:{x:855,y:450}, playerStart:{x:30,y:400},
+        platforms:[
+          {id:'g1',x:0,  y:450,w:160,h:20,type:'ground'},
+          {id:'g2',x:220,y:450,w:120,h:20,type:'ground'},
+          {id:'g3',x:400,y:430,w:80, h:20,type:'ground'},
+          {id:'g4',x:530,y:450,w:80, h:20,type:'ground'},
+          {id:'g5',x:670,y:430,w:80, h:20,type:'ground'},
+          {id:'g6',x:800,y:450,w:100,h:20,type:'ground'},
+        ],
+      };
+      // ── LEVEL 15 — The Final Lie ─────────────────────────────────────────────────
+      case 15: return {
+        tip:['tip: almost there. just walk forward.',''],
+        flag:{x:20,y:450}, playerStart:{x:420,y:400},
+        platforms:[
+          {id:'gf', x:0,  y:450,w:900,h:20,type:'ground'},
+          {id:'ff', x:860,y:450,w:1,  h:1, type:'fakeflag'},
+          {id:'fw', x:200,y:0,  w:28, h:445,type:'fakewall'},
+        ],
+      };
       default: return getLevelData(1);
       }
     }
@@ -258,6 +339,9 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       appleSpawnTimer= 0;
       postFirstDeath = false;
       levelFlash     = LEVEL_FLASH_FRAMES;
+      toggleTimer=0; togglePhase=false;
+      countdownTimer=0; standTimers={};
+      copycatHistory=[]; copycatSpikes=[]; copycatSpikeSpawn=0;
       for(const p of levelData.platforms){ p.disabled=false; p.spiked=false; }
       initPlayer();
     }
@@ -274,9 +358,12 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       if(levelData.swapControls) controlsSwapped=true;
       if(levelData.tempSwapControls){ controlsSwapped=false; controlSwapTimer=0; }
       for(const p of levelData.platforms){ p.disabled=false; p.spiked=false; }
+      toggleTimer=0; togglePhase=false;
+      countdownTimer=0; standTimers={};
+      copycatHistory=[]; copycatSpikes=[]; copycatSpikeSpawn=0;
     }
 
-    loadLevel(1);
+    loadLevel(startLevel);
 
     // ── Drawing ──────────────────────────────────────────────────────────────────
 
@@ -484,6 +571,96 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       ctx.restore(); ctx.textAlign='left';
     }
 
+    // ── New tile draw functions ───────────────────────────────────────────────────
+
+    function drawToggle(p: any){
+      // safe when: (groupA && !togglePhase) || (groupB && togglePhase)
+      const isSafe = p.alt ? togglePhase : !togglePhase;
+      if(!isSafe){
+        drawDeath(p);
+      } else {
+        // invisible / safe — barely-there shimmer
+        const alpha=0.07+0.04*Math.sin(tick*0.05+p.x*0.01);
+        ctx.globalAlpha=alpha; ctx.fillStyle='#aaaaff';
+        ctx.fillRect(p.x,p.y,p.w,p.h);
+        ctx.globalAlpha=1;
+      }
+    }
+
+    function drawStandTile(p: any){
+      const prog=Math.min(1,(standTimers[p.id]||0)/120);
+      const pulse=0.5+0.5*Math.sin(tick*0.08);
+      const gb=(100+155*prog)|0;
+      ctx.fillStyle=`rgb(0,${gb},${(200-80*prog)|0})`;
+      ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.shadowColor=prog>0?'#00ff88':'#0088ff'; ctx.shadowBlur=10*pulse;
+      ctx.fillStyle='#aaffff'; ctx.font='8px monospace'; ctx.textAlign='center';
+      ctx.fillText(prog>0?`${Math.ceil((1-prog)*2)}s`:'WAIT', p.x+p.w/2, p.y-3);
+      ctx.textAlign='left'; ctx.shadowBlur=0;
+      // progress bar
+      if(prog>0){
+        ctx.fillStyle=`rgba(0,255,136,${0.6+0.4*pulse})`;
+        ctx.fillRect(p.x,p.y,p.w*prog,3);
+      }
+    }
+
+    function drawBarrier(p: any){
+      ctx.fillStyle='#3a2060'; ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle='#8844cc';
+      ctx.fillRect(p.x,p.y,p.w,2); ctx.fillRect(p.x,p.y+p.h-2,p.w,2);
+      ctx.save(); ctx.translate(p.x+p.w/2,p.y+p.h/2); ctx.rotate(-Math.PI/2);
+      ctx.fillStyle='#6633aa'; ctx.font='bold 9px monospace'; ctx.textAlign='center';
+      ctx.fillText('LOCKED',0,3); ctx.restore(); ctx.textAlign='left';
+    }
+
+    function drawCopycatGhost(){
+      if(copycatHistory.length<60) return;
+      const g=copycatHistory[0];
+      const cx=g.x+8, hy=g.y;
+      ctx.save(); ctx.globalAlpha=0.55; ctx.strokeStyle='#ff5555'; ctx.lineWidth=2; ctx.lineCap='round';
+      ctx.shadowColor='#ff0000'; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.arc(cx,hy+6,6,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,hy+12); ctx.lineTo(cx,hy+26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,hy+26); ctx.lineTo(cx-7,hy+36); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,hy+26); ctx.lineTo(cx+7,hy+36); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,hy+16); ctx.lineTo(cx-9,hy+22); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,hy+16); ctx.lineTo(cx+9,hy+22); ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCopycatSpikes(){
+      for(const s of copycatSpikes){
+        const a=Math.min(1,s.timer/30);
+        ctx.save(); ctx.globalAlpha=a;
+        ctx.shadowColor='#ff2200'; ctx.shadowBlur=10*a;
+        ctx.fillStyle='#ff3300';
+        ctx.beginPath(); ctx.moveTo(s.x-7,s.y); ctx.lineTo(s.x,s.y-14); ctx.lineTo(s.x+7,s.y); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawMirrorEffect(){
+      const mirrorY=295;
+      // draw reflection in bottom half
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0,mirrorY+2,W,H-mirrorY-2); ctx.clip();
+      ctx.translate(0,mirrorY*2); ctx.scale(1,-1); ctx.globalAlpha=0.55;
+      for(const p of levelData.platforms){
+        const rp={...p};
+        if(p.type==='mirrorDeath') rp.type='safe';
+        else if(p.type==='mirrorSafe') rp.type='death';
+        drawPlatform(rp);
+      }
+      ctx.restore();
+      // overlay fade
+      ctx.fillStyle='rgba(0,0,20,0.35)'; ctx.fillRect(0,mirrorY+2,W,H-mirrorY-2);
+      // mirror line
+      ctx.strokeStyle='rgba(120,160,255,0.55)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(0,mirrorY); ctx.lineTo(W,mirrorY); ctx.stroke();
+      ctx.fillStyle='rgba(120,160,255,0.6)'; ctx.font='10px monospace'; ctx.textAlign='center';
+      ctx.fillText('— reflection —',W/2,mirrorY+14); ctx.textAlign='left';
+    }
+
     function drawPlatform(p: any){
       if(p.disabled) return;
       const flipped=!!(levelData.gravityFlipX && p.x>=levelData.gravityFlipX);
@@ -497,6 +674,14 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
         case 'cracked':     drawCracked(p);                                break;
         case 'spikeTrap':   drawSpikeTrap(p);                              break;
         case 'checkpoint':  drawCheckpoint(p);                             break;
+        // ── New level types ───────────────────────────────────────────────────────
+        case 'toggle':      drawToggle(p);                                 break;
+        case 'standTile':   drawStandTile(p);                              break;
+        case 'barrier':     drawBarrier(p);                                break;
+        case 'mirrorDeath': drawDeath(p);                                  break; // looks deadly, is safe
+        case 'mirrorSafe':  drawSafe(p);                                   break; // looks safe, is deadly
+        case 'fakewall':    drawGround(p);                                 break; // looks solid, passthrough
+        case 'fakeflag':    drawFlag({x:p.x,y:p.y});                      break; // looks like goal, is death
       }
     }
 
@@ -626,7 +811,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       ctx.textAlign='right';
       ctx.shadowColor='#3366ff'; ctx.shadowBlur=7;
       ctx.fillStyle='#8899ff';
-      ctx.fillText('level '+currentLevel+'/10', W-12, 22);
+      ctx.fillText('level '+currentLevel+'/15', W-12, 22);
       ctx.shadowBlur=0; ctx.textAlign='left';
 
       const tip=levelData.tip;
@@ -670,6 +855,45 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
         ctx.fillText('\u2195 gravity inverted', 12, H-16);
         ctx.shadowBlur=0;
       }
+
+      // ── Level 11: toggle phase indicator ────────────────────────────────────────
+      if(currentLevel===11){
+        // groupA (1,3,5) safe when !togglePhase; groupB (2,4) safe when togglePhase
+        const groupASafe=!togglePhase;
+        const pct=toggleTimer/120;
+        ctx.font='12px monospace'; ctx.textAlign='center';
+        // pattern indicator: ●○●○●  or  ○●○●○
+        const dot=(safe:boolean)=>safe?'\u25cf':'\u25cb';
+        const pattern=`${dot(groupASafe)} ${dot(!groupASafe)} ${dot(groupASafe)} ${dot(!groupASafe)} ${dot(groupASafe)}`;
+        ctx.fillStyle='rgba(200,220,255,0.8)';
+        ctx.fillText('safe: '+pattern, W/2, H-30);
+        ctx.textAlign='left';
+        // countdown bar to next swap
+        ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.fillRect(W/2-80,H-19,160,5);
+        ctx.fillStyle='#88aaff'; ctx.fillRect(W/2-80,H-19,160*(1-pct),5);
+      }
+
+      // ── Level 12: countdown ──────────────────────────────────────────────────────
+      if(currentLevel===12){
+        const secs=Math.max(0,10-Math.floor(countdownTimer/60));
+        ctx.textAlign='center'; ctx.shadowBlur=8;
+        ctx.shadowColor=secs>0?'#ff4400':'#444444';
+        ctx.fillStyle=secs>0?'#ff6622':'#555555';
+        ctx.font='bold 18px monospace';
+        ctx.fillText(secs>0?'\u23f1 '+secs+'s':'\u23f1 ...', W/2, H-28);
+        ctx.shadowBlur=0; ctx.textAlign='left';
+        const barDone=standTimers['st']?Math.min(1,standTimers['st']/120):0;
+        if(barDone>0&&barDone<1){
+          ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(W/2-80,H-18,160,5);
+          ctx.fillStyle='#00ffaa'; ctx.fillRect(W/2-80,H-18,160*barDone,5);
+        }
+      }
+
+      // ── Level 14: copycat warning ─────────────────────────────────────────────
+      if(currentLevel===14&&copycatHistory.length>=60){
+        ctx.fillStyle='rgba(255,80,80,0.75)'; ctx.font='11px monospace';
+        ctx.fillText('\u26a0 your shadow returns...', 12, H-16);
+      }
     }
 
     function drawDeathScreen(){
@@ -697,7 +921,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       ctx.fillText('NICE!', W/2, H/2);
       ctx.shadowBlur=0;
       ctx.fillStyle='#667788'; ctx.font='18px monospace';
-      if(currentLevel<10) ctx.fillText('loading level '+(currentLevel+1)+'...', W/2, H/2+46);
+      if(currentLevel<15) ctx.fillText('loading level '+(currentLevel+1)+'...', W/2, H/2+46);
       ctx.textAlign='left';
     }
 
@@ -710,7 +934,8 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       ctx.font='22px monospace'; ctx.fillStyle=`rgba(180,180,180,${a})`;
       const names=['Read The Tip','The Air Is Friendly','Now You See It','Be Patient They Said',
                    'Trust The Checkpoint','Mirror Brain','Which Way Is Down',
-                   'Follow The Instructions','Apple Season','Everything Hurts'];
+                   'Follow The Instructions','Apple Season','Everything Hurts',
+                   "Don't Blink",'Speed Run','The Mirror','Copycat','The Final Lie'];
       ctx.fillText(names[currentLevel-1]||'', W/2, H/2+52);
       ctx.textAlign='left';
     }
@@ -729,7 +954,7 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       if(levelWon){
         deathTimer--;
         if(deathTimer<=0){
-          if(currentLevel>=10){
+          if(currentLevel>=15){
             gameWon=true;
             if(!wonNotified){ wonNotified=true; onGameWonRef.current(deathCount, Date.now()-startTime); }
           }
@@ -742,6 +967,34 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
         deathTimer--;
         if(deathTimer<=0) initPlayer();
         return;
+      }
+
+      // ── Level 11: toggle timer ───────────────────────────────────────────────────
+      if(currentLevel===11){
+        toggleTimer++;
+        if(toggleTimer>=120){ toggleTimer=0; togglePhase=!togglePhase; }
+      }
+
+      // ── Level 12: countdown ──────────────────────────────────────────────────────
+      if(currentLevel===12 && countdownTimer<660) countdownTimer++;
+
+      // ── Level 14: copycat ────────────────────────────────────────────────────────
+      if(currentLevel===14){
+        copycatHistory.push({x:player.x,y:player.y});
+        if(copycatHistory.length>120) copycatHistory.shift();
+
+        copycatSpikeSpawn++;
+        if(copycatSpikeSpawn>=25 && copycatHistory.length>=60){
+          copycatSpikeSpawn=0;
+          const g=copycatHistory[0];
+          copycatSpikes.push({x:g.x+8, y:g.y+36, timer:75});
+        }
+        copycatSpikes=copycatSpikes.filter(s=>{ s.timer--; return s.timer>0; });
+
+        for(const s of copycatSpikes){
+          const dx=(player.x+8)-s.x, dy=(player.y+18)-s.y;
+          if(Math.sqrt(dx*dx+dy*dy)<13){ triggerDeath(); return; }
+        }
       }
 
       // Control swap logic (level 6 permanent, level 10 timed)
@@ -792,13 +1045,43 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       // Platform collisions
       for(const p of levelData.platforms){
         if(p.disabled) continue;
-        if(p.type==='passthrough') continue;
+        if(p.type==='passthrough'||p.type==='fakewall') continue;
 
         const topY=getPTop(p), botY=getPBot(p);
 
-        if(p.type==='death'||p.type==='checkpoint'){
+        // Barrier: solid wall — push player horizontally
+        if(p.type==='barrier'){
           if(rectOverlap(player.x,player.y,player.w,player.h,p.x,p.y,p.w,p.h)){
-            triggerDeath(); return;
+            const playerMid=player.x+player.w/2, barrierMid=p.x+p.w/2;
+            if(playerMid<barrierMid){ player.x=p.x-player.w-1; }
+            else { player.x=p.x+p.w+1; }
+            player.vx=0;
+          }
+          continue;
+        }
+
+        // Toggle: safe=(groupA && !togglePhase)||(groupB && togglePhase)
+        if(p.type==='toggle'){
+          const isSafe = p.alt ? togglePhase : !togglePhase;
+          if(!isSafe){
+            if(rectOverlap(player.x,player.y,player.w,player.h,p.x,p.y,p.w,p.h)){
+              triggerDeath(); return;
+            }
+            continue;
+          }
+          // safe phase: fall through to ground landing logic
+        }
+
+        if(p.type==='death'||p.type==='checkpoint'||p.type==='mirrorSafe'||p.type==='fakeflag'){
+          if(p.type==='fakeflag'){
+            // use flag hitbox
+            if(rectOverlap(player.x,player.y,player.w,player.h,p.x-4,p.y-62,38,64)){
+              triggerDeath(); return;
+            }
+          } else {
+            if(rectOverlap(player.x,player.y,player.w,player.h,p.x,p.y,p.w,p.h)){
+              triggerDeath(); return;
+            }
           }
           continue;
         }
@@ -825,6 +1108,17 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
               if(p.type==='vanish'){
                 vanishTimers[p.id]=(vanishTimers[p.id]||0)+1;
                 if(vanishTimers[p.id]>=48) p.disabled=true;
+              }
+              if(p.type==='standTile'){
+                if(Math.abs(player.vx)===0){
+                  standTimers[p.id]=(standTimers[p.id]||0)+1;
+                  if(standTimers[p.id]>=120){
+                    const bar=levelData.platforms.find((b:any)=>b.type==='barrier');
+                    if(bar) bar.disabled=true;
+                  }
+                } else {
+                  standTimers[p.id]=0;
+                }
               }
             }
           }
@@ -883,8 +1177,10 @@ export function GameCanvas({ onGameWon, gameKey }: Props) {
       ctx.clearRect(0,0,W,H);
       drawBG();
       for(const p of levelData.platforms) drawPlatform(p);
+      if(currentLevel===13) drawMirrorEffect();
       drawFlag(levelData.flag);
       drawApples();
+      if(currentLevel===14){ drawCopycatGhost(); drawCopycatSpikes(); }
       drawStick(player.x,player.y,player.dead);
       drawHUD();
       if(player.dead) drawDeathScreen();

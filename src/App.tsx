@@ -4,15 +4,21 @@ import { HomeScreen } from './components/HomeScreen'
 import { WinScreen } from './components/WinScreen'
 import { GameCanvas } from './components/GameCanvas'
 import { useWallet } from './hooks/useWallet'
-import { getUsername, setUsername, shortAddress } from './lib/storage'
+import { getPlayerId, getStoredUsername, storeUsername, shortAddress } from './lib/storage'
 import { UsernameModal } from './components/UsernameModal'
 import type { Screen, WinResult } from './types'
+
+const params = new URLSearchParams(window.location.search)
+const adminMode = params.has('admin') || params.has('level')
+const urlLevel  = parseInt(params.get('level') || '1', 10)
+const defaultStart = (urlLevel >= 1 && urlLevel <= 15) ? urlLevel : 1
 
 export default function App() {
   const [screen, setScreen]     = useState<Screen>('home')
   const [winResult, setWinResult] = useState<WinResult | null>(null)
   const [gameKey, setGameKey]   = useState(0)
   const [showUsernameModal, setShowUsernameModal] = useState(false)
+  const [startLevel, setStartLevel] = useState(defaultStart)
 
   const wallet = useWallet()
 
@@ -27,19 +33,27 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [screen])
 
-  // Show username modal whenever a wallet connects without a saved username
+  // Show username modal for guests on first load if no name stored
   useEffect(() => {
-    if (wallet.connected && wallet.address && !getUsername(wallet.address)) {
-      setShowUsernameModal(true)
+    const guestId = getPlayerId(null)
+    if (!getStoredUsername(guestId)) setShowUsernameModal(true)
+  }, [])
+
+  // Show username modal when a wallet connects without a saved username
+  useEffect(() => {
+    if (wallet.connected && wallet.address) {
+      const walletId = getPlayerId(wallet.address)
+      if (!getStoredUsername(walletId)) setShowUsernameModal(true)
     }
   }, [wallet.connected, wallet.address])
 
   function handleUsernameConfirm(name: string) {
-    if (wallet.address) setUsername(wallet.address, name)
+    storeUsername(getPlayerId(wallet.address), name)
     setShowUsernameModal(false)
   }
 
-  function handlePlay() {
+  function handlePlay(level = 1) {
+    setStartLevel(level)
     setGameKey(k => k + 1)
     setScreen('game')
   }
@@ -61,14 +75,14 @@ export default function App() {
   }
 
   // Username shown top-right when in game
-  const displayName = wallet.address
-    ? (getUsername(wallet.address) ?? shortAddress(wallet.address))
-    : null
+  const playerId = getPlayerId(wallet.address)
+  const storedName = getStoredUsername(playerId)
+  const displayName = storedName ?? (wallet.address ? shortAddress(wallet.address) : null)
 
   return (
     <>
       <Analytics />
-      {showUsernameModal && wallet.address && !getUsername(wallet.address) && (
+      {showUsernameModal && (
         <UsernameModal onConfirm={handleUsernameConfirm} />
       )}
 
@@ -76,6 +90,7 @@ export default function App() {
         <HomeScreen
           wallet={wallet}
           onPlay={handlePlay}
+          adminMode={adminMode}
         />
       )}
 
@@ -107,7 +122,7 @@ export default function App() {
             </div>
           </div>
 
-          <GameCanvas onGameWon={handleGameWon} gameKey={gameKey} />
+          <GameCanvas onGameWon={handleGameWon} gameKey={gameKey} startLevel={startLevel} />
 
           <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: '#333355', marginTop: 10, letterSpacing: 1 }}>
             ← → move &nbsp;|&nbsp; space / ↑ jump

@@ -7,53 +7,59 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJ
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 export async function submitScoreToSupabase(
+  playerId: string,
   username: string,
   deaths: number,
+  timeSeconds: number,
   levelReached: number,
-  address?: string,
-  verified = false,
+  isWalletVerified: boolean,
 ): Promise<void> {
-  if (address) {
-    const { error } = await supabase.from('scores').upsert(
-      { username, deaths, level_reached: levelReached, address: address.toLowerCase(), verified },
-      { onConflict: 'address' },
-    )
-    if (error) throw new Error(error.message)
-  } else {
-    const { error } = await supabase
-      .from('scores')
-      .insert({ username, deaths, level_reached: levelReached, verified: false })
-    if (error) throw new Error(error.message)
-  }
+  const { data: existing } = await supabase
+    .from('scores')
+    .select('best_deaths, best_time_seconds, total_plays')
+    .eq('session_id', playerId)
+    .single()
+
+  const isNewRecord =
+    !existing ||
+    deaths < existing.best_deaths ||
+    (deaths === existing.best_deaths && timeSeconds < existing.best_time_seconds)
+
+  const { error } = await supabase.from('scores').upsert(
+    {
+      session_id: playerId,
+      username,
+      is_wallet_verified: isWalletVerified,
+      best_deaths: isNewRecord ? deaths : existing!.best_deaths,
+      best_time_seconds: isNewRecord ? timeSeconds : existing!.best_time_seconds,
+      level_reached: levelReached,
+      total_plays: (existing?.total_plays ?? 0) + 1,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'session_id' },
+  )
+
+  if (error) throw new Error(error.message)
 }
 
 export async function fetchLeaderboardFromSupabase(): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
     .from('scores')
-    .select('id, username, address, deaths, level_reached, verified')
-    .gte('level_reached', 10)
-    .order('deaths', { ascending: true })
-    .limit(100)
+    .select('session_id, username, is_wallet_verified, best_deaths, best_time_seconds, level_reached')
+    .order('level_reached', { ascending: false })
+    .order('best_deaths', { ascending: true })
+    .order('best_time_seconds', { ascending: true })
+    .limit(50)
 
   if (error) throw new Error(error.message)
 
-  // deduplicate by address — keep lowest deaths row per address
-  const seen = new Map<string, typeof data[0]>()
-  for (const row of data ?? []) {
-    const key = row.address ? row.address.toLowerCase() : row.id
-    const existing = seen.get(key)
-    if (!existing || row.deaths < existing.deaths) seen.set(key, row)
-  }
-
-  return Array.from(seen.values())
-    .sort((a, b) => a.deaths - b.deaths)
-    .slice(0, 50)
-    .map((row, i) => ({
-      rank: i + 1,
-      address: row.address ?? '',
-      name: row.username || (row.address ? `0x${row.address.slice(2, 8)}...` : 'anon'),
-      deaths: row.deaths,
-      level: row.level_reached,
-      verified: row.verified ?? false,
-    }))
+  return (data ?? []).map((row, i) => ({
+    rank: i + 1,
+    sessionId: row.session_id,
+    name: row.username || 'anon',
+    deaths: row.best_deaths,
+    timeSeconds: row.best_time_seconds,
+    level: row.level_reached,
+    verified: row.is_wallet_verified ?? false,
+  }))
 }

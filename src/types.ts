@@ -2,11 +2,12 @@ export type Screen = 'home' | 'game' | 'win'
 
 export interface LeaderboardEntry {
   rank: number
-  address: string
+  sessionId: string
   name: string
   deaths: number
+  timeSeconds: number
   level: number
-  verified?: boolean
+  verified: boolean
 }
 
 export interface WinResult {
