@@ -90,7 +90,7 @@ export function HomeScreen({ wallet, onPlay, adminMode }: Props) {
                 className="btn btn-primary"
                 onClick={() => wallet.connectCartridge()}
                 disabled={wallet.connecting}
-                style={{ width: '100%' }}
+                style={{ width: '100%', minHeight: 48 }}
               >
                 {wallet.connecting ? 'connecting...' : '⚡ cartridge'}
               </button>
@@ -99,7 +99,7 @@ export function HomeScreen({ wallet, onPlay, adminMode }: Props) {
                 className="btn btn-ghost"
                 onClick={() => wallet.connectBrowser()}
                 disabled={wallet.connecting}
-                style={{ width: '100%' }}
+                style={{ width: '100%', minHeight: 48 }}
               >
                 argent x / braavos
               </button>

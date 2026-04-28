@@ -23,7 +23,7 @@ export function UsernameModal({ onConfirm }: Props) {
 
   return (
     <div className="overlay">
-      <div className="modal col gap-24">
+      <div className="modal col gap-24" style={{ margin: '0 16px' }}>
         <div className="col gap-8">
           <h2 style={{ fontSize: 20, letterSpacing: 2, color: 'var(--accent)' }}>
             gm anon.

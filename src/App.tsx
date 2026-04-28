@@ -8,6 +8,8 @@ import { getPlayerId, getStoredUsername, storeUsername, shortAddress } from './l
 import { UsernameModal } from './components/UsernameModal'
 import type { Screen, WinResult } from './types'
 
+const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)
+
 const params = new URLSearchParams(window.location.search)
 const adminMode = params.has('admin') || params.has('level')
 const urlLevel  = parseInt(params.get('level') || '1', 10)
@@ -95,9 +97,9 @@ export default function App() {
       )}
 
       {screen === 'game' && (
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, background: '#1a1a2e' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: 0, background: '#1a1a2e', paddingTop: 8, paddingBottom: isMobile ? 148 : 0 }}>
           {/* top bar */}
-          <div style={{ width: 900, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', marginBottom: 4 }}>
+          <div style={{ width: '100%', maxWidth: 900, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 12px', marginBottom: 4 }}>
             <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: '#555580', letterSpacing: 2 }}>
               TRUST THE FLOOR
             </span>
@@ -111,7 +113,8 @@ export default function App() {
                 onClick={handleHome}
                 style={{
                   background: 'transparent', border: '1px solid #2a2a4a', color: '#666680',
-                  fontFamily: 'Courier New, monospace', fontSize: 11, padding: '5px 12px',
+                  fontFamily: 'Courier New, monospace', fontSize: 11,
+                  padding: '8px 16px', minHeight: 44, minWidth: 44,
                   cursor: 'pointer', letterSpacing: 1
                 }}
                 onMouseOver={e => (e.currentTarget.style.borderColor = '#444466')}
@@ -124,7 +127,7 @@ export default function App() {
 
           <GameCanvas onGameWon={handleGameWon} gameKey={gameKey} startLevel={startLevel} />
 
-          <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: '#333355', marginTop: 10, letterSpacing: 1 }}>
+          <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: '#333355', marginTop: 8, letterSpacing: 1, textAlign: 'center', padding: '0 12px' }}>
             ← → / A D move &nbsp;|&nbsp; space / ↑ / W jump
           </p>
         </div>
