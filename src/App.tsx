@@ -125,7 +125,7 @@ export default function App() {
           <GameCanvas onGameWon={handleGameWon} gameKey={gameKey} startLevel={startLevel} />
 
           <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: '#333355', marginTop: 10, letterSpacing: 1 }}>
-            ← → move &nbsp;|&nbsp; space / ↑ jump
+            ← → / A D move &nbsp;|&nbsp; space / ↑ / W jump
           </p>
         </div>
       )}

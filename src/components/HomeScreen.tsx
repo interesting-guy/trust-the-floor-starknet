@@ -150,7 +150,7 @@ export function HomeScreen({ wallet, onPlay, adminMode }: Props) {
       </div>
 
       <p style={{ color: 'var(--dim)', fontSize: 11, letterSpacing: 1 }}>
-        ← → move &nbsp;|&nbsp; space / ↑ jump &nbsp;|&nbsp; 15 levels
+        ← → / A D move &nbsp;|&nbsp; space / ↑ / W jump &nbsp;|&nbsp; 15 levels
       </p>
 
       {adminMode && (

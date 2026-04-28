@@ -1007,8 +1007,8 @@ export function GameCanvas({ onGameWon, gameKey, startLevel = 1 }: Props) {
         }
       }
 
-      const goL = controlsSwapped ? keys['ArrowRight'] : keys['ArrowLeft'];
-      const goR = controlsSwapped ? keys['ArrowLeft']  : keys['ArrowRight'];
+      const goL = controlsSwapped ? (keys['ArrowRight'] || keys['KeyD']) : (keys['ArrowLeft'] || keys['KeyA']);
+      const goR = controlsSwapped ? (keys['ArrowLeft']  || keys['KeyA']) : (keys['ArrowRight'] || keys['KeyD']);
 
       if(goL)      player.vx=-SPEED;
       else if(goR) player.vx= SPEED;
@@ -1024,7 +1024,7 @@ export function GameCanvas({ onGameWon, gameKey, startLevel = 1 }: Props) {
 
       const grav     = gravityFlipped ? -BASE_GRAVITY : BASE_GRAVITY;
       const jumpF    = gravityFlipped ? -JUMP_FORCE   : JUMP_FORCE;
-      const jumpKey  = keys['Space']||keys['ArrowUp'];
+      const jumpKey  = keys['Space']||keys['ArrowUp']||keys['KeyW'];
 
       if(jumpKey && player.onGround){ player.vy=jumpF; player.onGround=false; }
 
@@ -1192,7 +1192,7 @@ export function GameCanvas({ onGameWon, gameKey, startLevel = 1 }: Props) {
 
     const onKeyDown = (e: KeyboardEvent) => {
       keys[e.code] = true;
-      if(['Space','ArrowUp','ArrowLeft','ArrowRight','ArrowDown'].includes(e.code)) e.preventDefault();
+      if(['Space','ArrowUp','ArrowLeft','ArrowRight','ArrowDown','KeyW','KeyA','KeyD'].includes(e.code)) e.preventDefault();
     };
     const onKeyUp = (e: KeyboardEvent) => { keys[e.code] = false; };
     document.addEventListener('keydown', onKeyDown);
